@@ -1,0 +1,4 @@
+ - TextFeld zum Nachricht schreiben (TextField)
+ - Gesendeten Text anzeigen (TextArea)
+ - Button zum Absenden (Button) ; aber auch mit [ENTER] (EventHandler)
+ - Verschiedene Gespraechspartner (List)

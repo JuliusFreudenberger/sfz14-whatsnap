@@ -1,0 +1,15 @@
+Methoden:
+
+windowClosing()
+
+fenster.setTitle("WhatSnap")
+
+Texteingabe in Eingabefeld per Tastatur (evtl. Validierung)
+Senden mit Button (EventHandler)
+Senden mit [ENTER] (EventHandler)
+Packen und an Server
+
+Eingehende Nachrichten in TextArea
+TimeStamp; unten links angeordnet
+
+ 
