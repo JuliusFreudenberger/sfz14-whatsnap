@@ -1,0 +1,33 @@
+    Tastatureingaben
+         Nachrichtentext
+
+    Nachrichtentransfer
+     Senden
+         Nachricht extrahieren
+         Codieren der Nachricht
+         Verbindung aufbauen
+         Nachricht senden
+     Empfangen
+         Empfangen des Binärstroms
+         Dekodieren der Nachricht -> String
+         (Timestamp hinzufügen)
+         Anzeigen der Nachricht
+
+
+
+    GUI-Elemente 
+         Schließen des Fensters
+         Größe des Fensters ändern
+         Maximieren/Minimieren
+         (Scrollbar)
+         GUI-Elemente anzeigen
+
+
+
+    (
+    Kontakte
+     Kontakt hinzufügen
+     Kontakt löschen
+     Kontakt auswählen
+     (Erinnerung)
+    )
