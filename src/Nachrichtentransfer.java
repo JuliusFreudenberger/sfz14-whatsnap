@@ -1,50 +1,60 @@
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringBufferInputStream;
 import java.io.StringReader;
-import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.util.stream.Stream;
 
 public class Nachrichtentransfer {
 
-	
-	 public BufferedReader nachrichtCodieren(String msg){
-		 BufferedReader nutzereingabe = new BufferedReader(new StringReader(msg));
-		 return nutzereingabe;
-	 
-	  }
-	
+	private Socket socket = new Socket();
+	private DataOutputStream outToServer;
+
 	public boolean verbindungAufbauen(String ip, int port) {
 
-		Socket socket = new Socket();
-		
 		try {
-			socket.connect(new InetSocketAddress(ip, port), 5*1000);
+			socket.setSoTimeout(5 * 1000);
+			socket.connect(new InetSocketAddress(ip, port), 5 * 1000);
+			outToServer = new DataOutputStream(socket.getOutputStream());
 		} catch (IOException e) {
 			return false;
 		}
-		
+
 		return true;
 	}
-	/*
-	 * public boolean nachrichtSenden(BufferedReader){
-	 * 
-	 * }
-	 * 
-	 * public BufferedReader streamEmpfangen(){
-	 * 
-	 * }
-	 * 
-	 * public String nachrichtDecodieren(BufferedReader ){
-	 * 
-	 * }
-	 */
+
+	public boolean nachrichtSenden(String nutzereingabe) {
+		System.out.println("Senden");
+		try {
+			outToServer.writeBytes(nutzereingabe + '\n');
+			System.out.println("Try " + nutzereingabe);
+		} catch (IOException e) {
+			System.out.println("False");
+			return false;
+		}
+		System.out.println("Sent: " + nutzereingabe);
+		return true;
+	}
+
+	public BufferedReader streamEmpfangen() {
+		BufferedReader inFromServer;
+		try {
+			inFromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		} catch (IOException e) {
+			return new BufferedReader(new StringReader(""));
+		}
+		return inFromServer;
+	}
+
+	public String nachrichtDecodieren(BufferedReader serverEmpfangen) {
+		String inFromServer;
+		try {
+			inFromServer = serverEmpfangen.readLine();
+		} catch (IOException e) {
+			return new String();
+		}
+		return inFromServer;
+	}
+
 }
