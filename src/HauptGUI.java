@@ -1,41 +1,62 @@
 import java.awt.*;
 import java.awt.event.*;
 
-public class GUIElemente extends Frame implements WindowListener {
+public class HauptGUI extends Frame implements WindowListener {
 
 	private TextArea nachrichtenTextArea;
-	
+	private TextField nachrichtenTextfeld;
+	private boolean sendeNachricht = false;
+
 	public static void main(String[] args) {
-		GUIElemente guiElemente = new GUIElemente();
+		HauptGUI hauptGUI = new HauptGUI();
 		ExtraGUI extraGUI = new ExtraGUI();
 		Nachrichtentransfer nachrichtentransfer = new Nachrichtentransfer();
-		guiElemente.initialisiereGUI(nachrichtentransfer);
 
-		String[] ipPort = extraGUI.verbindungsdetails();
+		String[] ipPort;
+		hauptGUI.initialisiereGUI();
 
-		int i = 0;
-		while (nachrichtentransfer.verbindungAufbauen(ipPort[0], Integer.parseInt(ipPort[1])) == false && i <= 3) {
-			System.out.println(
-					"[Client] [WARNUNG] Verbindung zum " + (i + 1) + ". Mal fehlgeschlagen. Versuche erneut...");
-			if (i >= 3) {
-				extraGUI.verbindungsfehler(i);
+		while(true) {
+			ipPort = extraGUI.verbindungsdetails();
+
+			int i = 0;
+			while (nachrichtentransfer.verbindungAufbauen(ipPort[0], Integer.parseInt(ipPort[1])) == false && i <= 3) {
+				System.out.println(
+						"[Client] [WARNUNG] Verbindung zum " + (i + 1) + ". Mal fehlgeschlagen. Versuche erneut...");
+				if (i >= 3) {
+					extraGUI.verbindungsfehler();
+				}
+				i++;
 			}
-			i++;
-		}
-		System.out.println("[Client] Connection established");
-
-		while (true) {
-			guiElemente
-					.nachrichtAnzeigen(nachrichtentransfer.nachrichtDecodieren(nachrichtentransfer.streamEmpfangen()));
-
-			try {
-				Thread.sleep(5 * 1000);
-			} catch (InterruptedException e) {
+			if(i== 0) {
+				break;
+			}
+			while(extraGUI.isVerbindungsfehlerGeschlossen() == false) {
+				try {
+					Thread.sleep(0);
+				} catch (InterruptedException e) {}
 			}
 		}
-	}
 
-	public void initialisiereGUI(Nachrichtentransfer nachrichtentransfer) {
+			System.out.println("[Client] Connection established");
+
+			while (true) {
+				String empfangeneNachricht = nachrichtentransfer
+						.nachrichtDecodieren(nachrichtentransfer.streamEmpfangen());
+				/** Prueft, ob die empfangene Nachricht nicht leer ist. */
+				
+				if (empfangeneNachricht != null) {
+					hauptGUI.nachrichtAnzeigen(empfangeneNachricht);
+				}
+
+				if (hauptGUI.isSendeNachricht()) {
+					nachrichtentransfer.nachrichtSenden(hauptGUI.getNachrichtenTextfeld().getText());
+					hauptGUI.getNachrichtenTextfeld().setText("");
+					hauptGUI.setSendeNachricht(false);
+				}
+			}
+		}
+
+	public void initialisiereGUI() {
 		addWindowListener(this);
 		setTitle("WhatSnap - Hauptfenster");
 		setSize(800, 800);
@@ -46,7 +67,7 @@ public class GUIElemente extends Frame implements WindowListener {
 		nachrichtenTextArea.setBounds(180, 50, 500, 630);
 		add(nachrichtenTextArea);
 
-		TextField nachrichtenTextfeld = new TextField();
+		nachrichtenTextfeld = new TextField();
 		nachrichtenTextfeld.setBounds(180, 700, 500, 50);
 		nachrichtenTextfeld.setEditable(true);
 		nachrichtenTextfeld.addKeyListener(new KeyListener() {
@@ -62,8 +83,7 @@ public class GUIElemente extends Frame implements WindowListener {
 			@Override
 			public void keyPressed(KeyEvent e) {
 				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-					nachrichtentransfer.nachrichtSenden(nachrichtenTextfeld.getText());
-					nachrichtenTextfeld.setText("");
+					sendeNachricht = true;
 				}
 			}
 		});
@@ -76,8 +96,7 @@ public class GUIElemente extends Frame implements WindowListener {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				nachrichtentransfer.nachrichtSenden(nachrichtenTextfeld.getText());
-				nachrichtenTextfeld.setText("");
+				sendeNachricht = true;
 			}
 		});
 
@@ -121,6 +140,18 @@ public class GUIElemente extends Frame implements WindowListener {
 
 	@Override
 	public void windowOpened(WindowEvent arg0) {
+	}
+
+	public void setSendeNachricht(boolean sendeNachricht) {
+		this.sendeNachricht = sendeNachricht;
+	}
+
+	public TextField getNachrichtenTextfeld() {
+		return nachrichtenTextfeld;
+	}
+
+	public boolean isSendeNachricht() {
+		return sendeNachricht;
 	}
 
 }
