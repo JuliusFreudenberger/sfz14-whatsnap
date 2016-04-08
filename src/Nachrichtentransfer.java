@@ -57,4 +57,8 @@ public class Nachrichtentransfer {
 		return inFromServer;
 	}
 
+	public void setSocket(Socket socket) {
+		this.socket = socket;
+	}
+
 }

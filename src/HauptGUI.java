@@ -1,5 +1,13 @@
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Button;
+import java.awt.Frame;
+import java.awt.TextArea;
+import java.awt.TextField;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 
 public class HauptGUI extends Frame implements WindowListener {
 
@@ -7,54 +15,72 @@ public class HauptGUI extends Frame implements WindowListener {
 	private TextField nachrichtenTextfeld;
 	private boolean sendeNachricht = false;
 
+	// Nachricht-Puffer
+	private String nachricht;
+
 	public static void main(String[] args) {
 		HauptGUI hauptGUI = new HauptGUI();
 		ExtraGUI extraGUI = new ExtraGUI();
+		Verbindung verbindung = new Verbindung();
 		Nachrichtentransfer nachrichtentransfer = new Nachrichtentransfer();
 
 		String[] ipPort;
 		hauptGUI.initialisiereGUI();
 
-		while(true) {
-			ipPort = extraGUI.verbindungsdetails();
-
-			int i = 0;
-			while (nachrichtentransfer.verbindungAufbauen(ipPort[0], Integer.parseInt(ipPort[1])) == false && i <= 3) {
-				System.out.println(
-						"[Client] [WARNUNG] Verbindung zum " + (i + 1) + ". Mal fehlgeschlagen. Versuche erneut...");
-				if (i >= 3) {
-					extraGUI.verbindungsfehler();
-				}
-				i++;
-			}
-			if(i== 0) {
-				break;
-			}
-			while(extraGUI.isVerbindungsfehlerGeschlossen() == false) {
+		while (true) {
+			verbindung.verbindungsdetails();
+			while (verbindung.isVerbindungsdetailsGeschlossen() == false) {
 				try {
 					Thread.sleep(0);
-				} catch (InterruptedException e) {}
+				} catch (InterruptedException e) {
+				}
+			}
+			if (verbindung.getSocket().isConnected() == false) {
+				ipPort = verbindung.getIpPort();
+
+				int i = 0;
+				while (nachrichtentransfer.verbindungAufbauen(ipPort[0], Integer.parseInt(ipPort[1])) == false
+						&& i <= 3) {
+					System.out.println("[Client] [WARNUNG] Verbindung zum " + (i + 1)
+							+ ". Mal fehlgeschlagen. Versuche erneut...");
+					if (i >= 3) {
+						extraGUI.verbindungsfehler();
+					}
+					i++;
+				}
+				if (i == 0) {
+					break;
+				}
+
+				// wartet auf den geschlossene Verbindungsdetails-Frame
+				while (extraGUI.isVerbindungsfehlerGeschlossen() == false) {
+					try {
+						Thread.sleep(0);
+					} catch (InterruptedException e) {
+					}
+				}
+			} else {
+				verbindung.frameSchlieﬂen();
+				nachrichtentransfer.setSocket(verbindung.getSocket());
 			}
 		}
 
-			System.out.println("[Client] Connection established");
+		System.out.println("[Client] Connection established");
 
-			while (true) {
-				String empfangeneNachricht = nachrichtentransfer
-						.nachrichtDecodieren(nachrichtentransfer.streamEmpfangen());
-				/** Prueft, ob die empfangene Nachricht nicht leer ist. */
-				
-				if (empfangeneNachricht != null) {
-					hauptGUI.nachrichtAnzeigen(empfangeneNachricht);
-				}
+		while (true) {
+			String empfangeneNachricht = nachrichtentransfer.nachrichtDecodieren(nachrichtentransfer.streamEmpfangen());
+			// Prueft, ob die empfangene Nachricht nicht leer ist.
 
-				if (hauptGUI.isSendeNachricht()) {
-					nachrichtentransfer.nachrichtSenden(hauptGUI.getNachrichtenTextfeld().getText());
-					hauptGUI.getNachrichtenTextfeld().setText("");
-					hauptGUI.setSendeNachricht(false);
-				}
+			if (empfangeneNachricht != null) {
+				hauptGUI.nachrichtAnzeigen(empfangeneNachricht);
+			}
+
+			if (hauptGUI.isSendeNachricht()) {
+				nachrichtentransfer.nachrichtSenden(hauptGUI.getNachricht());
+				hauptGUI.setSendeNachricht(false);
 			}
 		}
+	}
 
 	public void initialisiereGUI() {
 		addWindowListener(this);
@@ -84,6 +110,8 @@ public class HauptGUI extends Frame implements WindowListener {
 			public void keyPressed(KeyEvent e) {
 				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 					sendeNachricht = true;
+					nachricht = nachrichtenTextfeld.getText();
+					nachrichtenTextfeld.setText("");
 				}
 			}
 		});
@@ -97,6 +125,8 @@ public class HauptGUI extends Frame implements WindowListener {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				sendeNachricht = true;
+				nachricht = nachrichtenTextfeld.getText();
+				nachrichtenTextfeld.setText("");
 			}
 		});
 
@@ -152,6 +182,10 @@ public class HauptGUI extends Frame implements WindowListener {
 
 	public boolean isSendeNachricht() {
 		return sendeNachricht;
+	}
+
+	public String getNachricht() {
+		return nachricht;
 	}
 
 }
