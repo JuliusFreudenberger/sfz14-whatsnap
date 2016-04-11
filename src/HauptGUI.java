@@ -8,8 +8,14 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 public class HauptGUI extends Frame implements WindowListener {
+	private static final long serialVersionUID = 1L;
+
+	// Der Standard verwendete Port
+	private final int defaultPort = 13784;
 
 	private TextArea nachrichtenTextArea;
 	private TextField nachrichtenTextfeld;
@@ -21,23 +27,23 @@ public class HauptGUI extends Frame implements WindowListener {
 	public static void main(String[] args) {
 		HauptGUI hauptGUI = new HauptGUI();
 		ExtraGUI extraGUI = new ExtraGUI();
-		Verbindung verbindung = new Verbindung();
-		Nachrichtentransfer nachrichtentransfer = new Nachrichtentransfer();
+		Nachrichtentransfer nachrichtentransfer = new Nachrichtentransfer(hauptGUI);
+		Verbindung verbindung = new Verbindung(hauptGUI, nachrichtentransfer);
 
 		String[] ipPort;
-		hauptGUI.initialisiereGUI();
 
 		while (true) {
-			verbindung.verbindungsdetails();
+			verbindung.initialisiereGUI();
+			// solange Verbindungsdetails nicht eingegeben und nicht bestaetigt,
+			// warte
 			while (verbindung.isVerbindungsdetailsGeschlossen() == false) {
 				try {
 					Thread.sleep(0);
 				} catch (InterruptedException e) {
 				}
 			}
-			if (verbindung.getSocket().isConnected() == false) {
+			if (nachrichtentransfer.getSocket().isConnected() == false) {
 				ipPort = verbindung.getIpPort();
-
 				int i = 0;
 				while (nachrichtentransfer.verbindungAufbauen(ipPort[0], Integer.parseInt(ipPort[1])) == false
 						&& i <= 3) {
@@ -60,22 +66,23 @@ public class HauptGUI extends Frame implements WindowListener {
 					}
 				}
 			} else {
-				verbindung.frameSchließen();
-				nachrichtentransfer.setSocket(verbindung.getSocket());
+				break;
 			}
 		}
-
+		verbindung.frameSchließen();
 		System.out.println("[Client] Connection established");
+		hauptGUI.initialisiereGUI();
 
 		while (true) {
 			String empfangeneNachricht = nachrichtentransfer.nachrichtDecodieren(nachrichtentransfer.streamEmpfangen());
 			// Prueft, ob die empfangene Nachricht nicht leer ist.
 
-			if (empfangeneNachricht != null) {
+			if (empfangeneNachricht.length() > 0) {
 				hauptGUI.nachrichtAnzeigen(empfangeneNachricht);
 			}
 
 			if (hauptGUI.isSendeNachricht()) {
+				hauptGUI.nachrichtAnzeigen();
 				nachrichtentransfer.nachrichtSenden(hauptGUI.getNachricht());
 				hauptGUI.setSendeNachricht(false);
 			}
@@ -137,9 +144,19 @@ public class HauptGUI extends Frame implements WindowListener {
 
 	}
 
-	public void nachrichtAnzeigen(String nachricht) {
-		System.out.println(nachricht);
-		nachrichtenTextArea.setText(nachrichtenTextArea.getText() + nachricht + '\n');
+	public void nachrichtAnzeigen() {
+		nachrichtenTextArea.setText(nachrichtenTextArea.getText() + getFormattedTime() + ": " + nachricht + '\n');
+	}
+
+	public void nachrichtAnzeigen(String empfangeneNachricht) {
+		nachrichtenTextArea
+				.setText(nachrichtenTextArea.getText() + getFormattedTime() + ": " + empfangeneNachricht + '\n');
+	}
+
+	public String getFormattedTime() {
+		Calendar calendar = Calendar.getInstance();
+		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+		return sdf.format(calendar.getTime());
 	}
 
 	@Override
@@ -186,6 +203,10 @@ public class HauptGUI extends Frame implements WindowListener {
 
 	public String getNachricht() {
 		return nachricht;
+	}
+
+	public int getDefaultPort() {
+		return defaultPort;
 	}
 
 }

@@ -7,9 +7,14 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 
 public class Nachrichtentransfer {
+	HauptGUI hauptGUI;
 
 	private Socket socket = new Socket();
 	private DataOutputStream outToServer;
+
+	public Nachrichtentransfer(HauptGUI hauptGUI) {
+		this.hauptGUI = hauptGUI;
+	}
 
 	public boolean verbindungAufbauen(String ip, int port) {
 
@@ -20,20 +25,15 @@ public class Nachrichtentransfer {
 		} catch (IOException e) {
 			return false;
 		}
-
 		return true;
 	}
 
 	public boolean nachrichtSenden(String nutzereingabe) {
-		System.out.println("Senden");
 		try {
 			outToServer.writeBytes(nutzereingabe + '\n');
-			System.out.println("Try " + nutzereingabe);
 		} catch (IOException e) {
-			System.out.println("False");
 			return false;
 		}
-		System.out.println("Sent: " + nutzereingabe);
 		return true;
 	}
 
@@ -59,6 +59,10 @@ public class Nachrichtentransfer {
 
 	public void setSocket(Socket socket) {
 		this.socket = socket;
+	}
+
+	public Socket getSocket() {
+		return socket;
 	}
 
 }
