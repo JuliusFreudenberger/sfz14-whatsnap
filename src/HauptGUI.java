@@ -21,8 +21,11 @@ public class HauptGUI extends Frame implements WindowListener {
 	private TextField nachrichtenTextfeld;
 	private boolean sendeNachricht = false;
 
-	// Nachricht-Puffer
+	// Zu sendende Nachricht-Puffer
 	private String nachricht;
+
+	// Empfangene Nachricht-Puffer
+	private String empfangeneNachricht = "";
 
 	public static void main(String[] args) {
 		HauptGUI hauptGUI = new HauptGUI();
@@ -32,61 +35,106 @@ public class HauptGUI extends Frame implements WindowListener {
 
 		String[] ipPort;
 
-		while (true) {
-			verbindung.initialisiereGUI();
-			// solange Verbindungsdetails nicht eingegeben und nicht bestaetigt,
-			// warte
+		verbindung.initialisiereGUI();
+
+		boolean erfolgreich = true;
+		do {
+			// warte auf geschlossenes Verbindungsdetails-Frame
 			while (verbindung.isVerbindungsdetailsGeschlossen() == false) {
 				try {
 					Thread.sleep(0);
 				} catch (InterruptedException e) {
 				}
 			}
+			// Verbinden, wenn nicht schon verbunden
 			if (nachrichtentransfer.getSocket().isConnected() == false) {
 				ipPort = verbindung.getIpPort();
-				int i = 0;
-				while (nachrichtentransfer.verbindungAufbauen(ipPort[0], Integer.parseInt(ipPort[1])) == false
-						&& i <= 3) {
-					System.out.println("[Client] [WARNUNG] Verbindung zum " + (i + 1)
-							+ ". Mal fehlgeschlagen. Versuche erneut...");
-					if (i >= 3) {
-						extraGUI.verbindungsfehler();
-					}
-					i++;
-				}
-				if (i == 0) {
-					break;
-				}
+				erfolgreich = hauptGUI.initialisiereVerbindungsaufbau(nachrichtentransfer, extraGUI, ipPort);
+			}
+		} while (erfolgreich == false);
 
-				// wartet auf den geschlossene Verbindungsdetails-Frame
+		verbindung.frameSchließen();
+
+		hauptGUI.initialisiereGUI();
+		nachrichtentransfer.outputStreamInitialisieren();
+
+		Runnable empfangenRunnable = new Runnable() {
+
+			@Override
+			public void run() {
+				while (true) {
+					try {
+						Thread.sleep(0);
+					} catch (InterruptedException e) {
+					}
+					hauptGUI.setEmpfangeneNachricht(
+							nachrichtentransfer.nachrichtDecodieren(nachrichtentransfer.streamEmpfangen()));
+				}
+			}
+		};
+
+		Runnable sendenRunnable = new Runnable() {
+			@Override
+			public void run() {
+				while (true) {
+					try {
+						Thread.sleep(0);
+					} catch (InterruptedException e) {
+					}
+					if (hauptGUI.isSendeNachricht()) {
+						hauptGUI.nachrichtAnzeigen();
+						nachrichtentransfer.nachrichtSenden(hauptGUI.getNachricht());
+						hauptGUI.setSendeNachricht(false);
+					}
+				}
+			}
+		};
+
+		Runnable empfangeneNachrichtAnzeigenRunnable = new Runnable() {
+			@Override
+			public void run() {
+				while (true) {
+					try {
+						Thread.sleep(0);
+					} catch (InterruptedException e) {
+					}
+
+					if (hauptGUI.getEmpfangeneNachricht().length() > 1) {
+						hauptGUI.nachrichtAnzeigen(hauptGUI.getEmpfangeneNachricht());
+						hauptGUI.setEmpfangeneNachricht("");
+					}
+				}
+			}
+		};
+
+		Thread empfangenThread = new Thread(empfangenRunnable, "Empfangen");
+		Thread sendenThread = new Thread(sendenRunnable, "Senden");
+		Thread empfangeneNachrichtAnzeigenThread = new Thread(empfangeneNachrichtAnzeigenRunnable,
+				"Empfangene Nachricht Anzeigen");
+
+		empfangenThread.start();
+		sendenThread.start();
+		empfangeneNachrichtAnzeigenThread.start();
+	}
+
+	public boolean initialisiereVerbindungsaufbau(Nachrichtentransfer nachrichtentransfer, ExtraGUI extraGUI,
+			String[] ipPort) {
+		int i = 0;
+		// Versuche 3-mal zu verbinden
+		while (nachrichtentransfer.verbindungAufbauen(ipPort[0], Integer.parseInt(ipPort[1])) == false && i <= 3) {
+			if (i == 3) {
+				extraGUI.verbindungsfehler();
 				while (extraGUI.isVerbindungsfehlerGeschlossen() == false) {
 					try {
 						Thread.sleep(0);
 					} catch (InterruptedException e) {
 					}
 				}
-			} else {
-				break;
+				return false;
 			}
+			i++;
 		}
-		verbindung.frameSchließen();
-		System.out.println("[Client] Connection established");
-		hauptGUI.initialisiereGUI();
-
-		while (true) {
-			String empfangeneNachricht = nachrichtentransfer.nachrichtDecodieren(nachrichtentransfer.streamEmpfangen());
-			// Prueft, ob die empfangene Nachricht nicht leer ist.
-
-			if (empfangeneNachricht.length() > 0) {
-				hauptGUI.nachrichtAnzeigen(empfangeneNachricht);
-			}
-
-			if (hauptGUI.isSendeNachricht()) {
-				hauptGUI.nachrichtAnzeigen();
-				nachrichtentransfer.nachrichtSenden(hauptGUI.getNachricht());
-				hauptGUI.setSendeNachricht(false);
-			}
-		}
+		return true;
 	}
 
 	public void initialisiereGUI() {
@@ -145,7 +193,8 @@ public class HauptGUI extends Frame implements WindowListener {
 	}
 
 	public void nachrichtAnzeigen() {
-		nachrichtenTextArea.setText(nachrichtenTextArea.getText() + getFormattedTime() + ": " + nachricht + '\n');
+		nachrichtenTextArea
+				.setText(nachrichtenTextArea.getText() + "(DU) " + getFormattedTime() + ": " + nachricht + '\n');
 	}
 
 	public void nachrichtAnzeigen(String empfangeneNachricht) {
@@ -209,4 +258,11 @@ public class HauptGUI extends Frame implements WindowListener {
 		return defaultPort;
 	}
 
+	public String getEmpfangeneNachricht() {
+		return empfangeneNachricht;
+	}
+
+	public void setEmpfangeneNachricht(String empfangeneNachricht) {
+		this.empfangeneNachricht = empfangeneNachricht;
+	}
 }

@@ -17,15 +17,20 @@ public class Nachrichtentransfer {
 	}
 
 	public boolean verbindungAufbauen(String ip, int port) {
-
 		try {
 			socket.setSoTimeout(5 * 1000);
 			socket.connect(new InetSocketAddress(ip, port), 5 * 1000);
-			outToServer = new DataOutputStream(socket.getOutputStream());
 		} catch (IOException e) {
 			return false;
 		}
 		return true;
+	}
+
+	public void outputStreamInitialisieren() {
+		try {
+			outToServer = new DataOutputStream(socket.getOutputStream());
+		} catch (IOException e) {
+		}
 	}
 
 	public boolean nachrichtSenden(String nutzereingabe) {
@@ -64,5 +69,4 @@ public class Nachrichtentransfer {
 	public Socket getSocket() {
 		return socket;
 	}
-
 }

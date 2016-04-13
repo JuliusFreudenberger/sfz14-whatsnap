@@ -106,20 +106,19 @@ public class Verbindung extends Frame implements WindowListener {
 
 		while (true) {
 			if (ipPort[0].length() >= 1 && ipPort[1].length() >= 1) {
-				frameSchlieﬂen();
 				serverThread.interrupt();
-				return;
+				break;
 			} else {
 				try {
 					Thread.sleep(0);
-				} catch (InterruptedException e1) {
+				} catch (InterruptedException e) {
 				}
 			}
 			if (verbunden == true) {
-				frameSchlieﬂen();
 				break;
 			}
 		}
+		frameSchlieﬂen();
 	}
 
 	// wartet auf Verbindung von anderen Clients
@@ -127,18 +126,17 @@ public class Verbindung extends Frame implements WindowListener {
 		lock.lock();
 		ServerSocket serversocket;
 		try {
-			// System.out.println("Warte");
 			serversocket = new ServerSocket(hauptGUI.getDefaultPort());
-			// serversocket.setSoTimeout(2 * 1000);
+			serversocket.setSoTimeout(2 * 1000);
 			socket = serversocket.accept();
 			serversocket.close();
 			if (socket.isConnected()) {
 				nachrichtentransfer.setSocket(socket);
 				frameSchlieﬂen();
 			}
-			lock.unlock();
 		} catch (IOException e) {
 		}
+		lock.unlock();
 	}
 
 	public void frameSchlieﬂen() {
@@ -162,12 +160,10 @@ public class Verbindung extends Frame implements WindowListener {
 
 	@Override
 	public void windowActivated(WindowEvent e) {
-
 	}
 
 	@Override
 	public void windowClosed(WindowEvent e) {
-
 	}
 
 	@Override
@@ -177,21 +173,17 @@ public class Verbindung extends Frame implements WindowListener {
 
 	@Override
 	public void windowDeactivated(WindowEvent e) {
-
 	}
 
 	@Override
 	public void windowDeiconified(WindowEvent e) {
-
 	}
 
 	@Override
 	public void windowIconified(WindowEvent e) {
-
 	}
 
 	@Override
 	public void windowOpened(WindowEvent e) {
-
 	}
 }
